@@ -10,6 +10,7 @@
  * ============================================================
  * A curl HTTP REST wrapper for the binance currency exchange
  */
+
 namespace Binance;
 
 use Exception;
@@ -29,6 +30,7 @@ if (version_compare(phpversion(), '7.0', '<=')) {
  */
 class API
 {
+
     protected $base = 'https://api.binance.com/api/'; // /< REST endpoint for the currency exchange
     protected $baseTestnet = 'https://testnet.binance.vision/api/'; // /< Testnet REST endpoint for the currency exchange
     protected $wapi = 'https://api.binance.com/wapi/'; // /< REST endpoint for the withdrawals
@@ -56,7 +58,7 @@ class API
     protected $btc_total = 0.00;
 
     // /< value of available onOrder assets
-    
+
     protected $exchangeInfo = null;
     protected $lastRequest = [];
 
@@ -376,8 +378,8 @@ class API
     {
         return $this->order("BUY", $symbol, $quantity, 0, "MARKET", $flags, true);
     }
-    
-    
+
+
     /**
      * numberOfDecimals() returns the signifcant digits level based on the minimum order amount.
      *
@@ -633,30 +635,31 @@ class API
     {
         if (!$this->exchangeInfo) {
             $arr = $this->httpRequest("v3/exchangeInfo");
-            
+
             $this->exchangeInfo = $arr;
             $this->exchangeInfo['symbols'] = null;
-            
+
             foreach ($arr['symbols'] as $key => $value) {
                 $this->exchangeInfo['symbols'][$value['symbol']] = $value;
             }
         }
-        
+
         return $this->exchangeInfo;
     }
+
 
     public function assetDetail()
     {
         $params["wapi"] = true;
         return $this->httpRequest("v3/assetDetail.html", 'GET', $params, true);
     }
-    
+
     public function userAssetDribbletLog()
     {
         $params["wapi"] = true;
         return $this->httpRequest("v3/userAssetDribbletLog.html", 'GET', $params, true);
     }
-    
+
     /**
      * Fetch current(daily) trade fee of symbol, values in percentage.
      * for more info visit binance official api document
@@ -671,7 +674,7 @@ class API
             "symbol" => $symbol,
             "wapi" => true,
         ];
-        
+
         return $this->httpRequest("v3/tradeFee.html", 'GET', $params, true);
     }
 
@@ -887,7 +890,7 @@ class API
             "symbol" => $symbol,
         ]));
     }
-    
+
     /**
      * historicalTrades - Get historical trades for a specific currency
      *
@@ -992,7 +995,7 @@ class API
      */
     public function coins()
     {
-        return $this->httpRequest('v1/capital/config/getall', 'GET', [ 'sapi' => true ], true);
+        return $this->httpRequest('v1/capital/config/getall', 'GET', ['sapi' => true], true);
     }
 
     /**
@@ -1111,7 +1114,7 @@ class API
                 unset($params['wapi']);
                 $base = $this->wapi;
             }
-        
+
             if (isset($params['sapi'])) {
                 if ($this->useTestnet) {
                     throw new \Exception("sapi endpoints are not available in testnet");
@@ -1119,7 +1122,7 @@ class API
                 unset($params['sapi']);
                 $base = $this->sapi;
             }
-        
+
             $query = http_build_query($params, '', '&');
             $signature = hash_hmac('sha256', $query, $this->api_secret);
             if ($method === "POST") {
@@ -1192,15 +1195,15 @@ class API
             // not outputing errors, hides it from users and ends up with tickets on github
             throw new \Exception('Curl error: ' . curl_error($curl));
         }
-    
+
         $header_size = curl_getinfo($curl, CURLINFO_HEADER_SIZE);
         $header = substr($output, 0, $header_size);
         $output = substr($output, $header_size);
-        
+
         curl_close($curl);
-        
+
         $json = json_decode($output, true);
-        
+
         $this->lastRequest = [
             'url' => $url,
             'method' => $method,
@@ -1218,10 +1221,15 @@ class API
         }
 
         if (isset($json['msg']) && !empty($json['msg'])) {
-            if ( $url != 'v1/system/status' && $url != 'v3/systemStatus.html' && $url != 'v3/accountStatus.html') {
+            if ($url != 'v1/system/status' && $url != 'v3/systemStatus.html' && $url != 'v3/accountStatus.html') {
                 // should always output error, not only on httpdebug
                 // not outputing errors, hides it from users and ends up with tickets on github
-                throw new \Exception('signedRequest error: '.print_r($output, true));
+                if (isset($json['code']))
+                    $jsonCode = $json['code'];
+                else
+                    $jsonCode = 0;
+
+                throw new \Exception('signedRequest error: ' . print_r($output, true), $jsonCode);
             }
         }
         $this->transfered += strlen($output);
@@ -2379,7 +2387,7 @@ class API
         $this->subscriptions['@userdata'] = true;
 
         $loop = \React\EventLoop\Factory::create();
-        $loop->addPeriodicTimer(30*60, function () {
+        $loop->addPeriodicTimer(30 * 60, function () {
             $listenKey = $this->listenKey;
             $this->httpRequest("v1/userDataStream?listenKey={$listenKey}", "PUT", []);
         });
@@ -2564,44 +2572,44 @@ class API
         fwrite($fp, $result);
         fclose($fp);
     }
-    
-    protected function floorDecimal($n, $decimals=2)
+
+    protected function floorDecimal($n, $decimals = 2)
     {
         return floor($n * pow(10, $decimals)) / pow(10, $decimals);
     }
 
 
-    protected function setXMbxUsedWeight(int $usedWeight) : void
+    protected function setXMbxUsedWeight(int $usedWeight): void
     {
         $this->xMbxUsedWeight = $usedWeight;
     }
 
-    protected function setXMbxUsedWeight1m(int $usedWeight1m) : void
+    protected function setXMbxUsedWeight1m(int $usedWeight1m): void
     {
         $this->xMbxUsedWeight1m = $usedWeight1m;
     }
 
-    public function getXMbxUsedWeight() : int
+    public function getXMbxUsedWeight(): int
     {
         $this->xMbxUsedWeight;
     }
 
-    public function getXMbxUsedWeight1m() : int
+    public function getXMbxUsedWeight1m(): int
     {
         $this->xMbxUsedWeight1m;
     }
 
-    private function getRestEndpoint() : string
+    private function getRestEndpoint(): string
     {
         return $this->useTestnet ? $this->baseTestnet : $this->base;
     }
 
-    private function getWsEndpoint() : string
+    private function getWsEndpoint(): string
     {
         return $this->useTestnet ? $this->streamTestnet : $this->stream;
     }
 
-    public function isOnTestnet() : bool
+    public function isOnTestnet(): bool
     {
         return $this->useTestnet;
     }
@@ -2609,11 +2617,11 @@ class API
     /**
      * systemStatus - Status indicator for sapi and wapi
      * 0 = Normal, 1 = System Maintenance
-     * 
+     *
      * @link https://binance-docs.github.io/apidocs/spot/en/#system-status-system
-     * 
+     *
      * @property int $weight 1
-     * 
+     *
      * @return array containing the response
      * @throws \Exception
      */
@@ -2621,29 +2629,29 @@ class API
     {
         $arr = array();
         $api_status = $this->httpRequest("v3/ping", 'GET');
-        if ( empty($api_status) ) {
-            $arr['api']['status']  = 'ping ok';    
+        if (empty($api_status)) {
+            $arr['api']['status']  = 'ping ok';
         } else {
-            $arr['api']['status']  = $api_status;    
+            $arr['api']['status']  = $api_status;
         }
-         
-        $arr['sapi'] = $this->httpRequest("v1/system/status", 'GET', [ 'sapi' => true ], true);
-        $arr['wapi'] = $this->httpRequest("v3/systemStatus.html", 'GET', [ 'wapi' => true ], true);
+
+        $arr['sapi'] = $this->httpRequest("v1/system/status", 'GET', ['sapi' => true], true);
+        $arr['wapi'] = $this->httpRequest("v3/systemStatus.html", 'GET', ['wapi' => true], true);
         return $arr;
     }
-    
+
     /**
      * accountSnapshot - Daily Account Snapshot at 00:00:00 UTC
-     * 
+     *
      * @link https://binance-docs.github.io/apidocs/spot/en/#daily-account-snapshot-user_data
-     * 
+     *
      * @property int $weight 1
-     * 
+     *
      * @param string $type      (mandatory) Should be SPOT, MARGIN or FUTURES
      * @param int    $nbrDays   (optional)  Number of days. Default 5, min 5, max 30
      * @param long   $startTime (optional)  Start time, e.g. 1617580799000
      * @param long   $endTime   (optional)  End time, e.g. 1617667199000
-     * 
+     *
      * @return array containing the response
      * @throws \Exception
      */
@@ -2651,57 +2659,57 @@ class API
     {
         if ($nbrDays < 5 || $nbrDays > 30)
             $nbrDays = 5;
-            
+
         $params = [
             'sapi' => true,
             'type' => $type,
-            ];
-            
+        ];
+
         if ($startTime > 0)
             $params['startTime'] = $startTime;
         if ($endTime > 0)
             $params['endTime'] = $startTime;
         if ($nbrDays != 5)
             $params['limit'] = $limit;
-            
+
         return $this->httpRequest("v1/accountSnapshot", 'GET', $params, true);
     }
-    
+
     /**
      * accountStatus - Fetch account status detail.
-     * 
+     *
      * @link https://binance-docs.github.io/apidocs/spot/en/#account-status-user_data
      * @link https://binance-docs.github.io/apidocs/spot/en/#account-status-sapi-user_data
-     * 
+     *
      * @property int $weight 2
-     * 
+     *
      * @return array containing the response
      * @throws \Exception
      */
     public function accountStatus()
     {
         $arr = array();
-        $arr['sapi'] = $this->httpRequest("v1/account/status", 'GET', [ 'sapi' => true ], true);
-        $arr['wapi'] = $this->httpRequest("v3/accountStatus.html", 'GET', [ 'wapi' => true ], true);
+        $arr['sapi'] = $this->httpRequest("v1/account/status", 'GET', ['sapi' => true], true);
+        $arr['wapi'] = $this->httpRequest("v3/accountStatus.html", 'GET', ['wapi' => true], true);
         return $arr;
     }
-    
+
     /**
      * apiTradingStatus - Fetch account API trading status detail.
-     * 
+     *
      * @link https://binance-docs.github.io/apidocs/spot/en/#account-api-trading-status-user_data
      * @link https://binance-docs.github.io/apidocs/spot/en/#account-api-trading-status-sapi-user_data
-     * 
+     *
      * @property int $weight 2
-     * 
+     *
      * @return array containing the response
      * @throws \Exception
      */
     public function apiTradingStatus()
     {
         $arr = array();
-        $arr['sapi'] = $this->httpRequest("v1/account/apiTradingStatus", 'GET', [ 'sapi' => true ], true);
-        $arr['wapi'] = $this->httpRequest("v3/apiTradingStatus.html", 'GET', [ 'wapi' => true ], true);
+        $arr['sapi'] = $this->httpRequest("v1/account/apiTradingStatus", 'GET', ['sapi' => true], true);
+        $arr['wapi'] = $this->httpRequest("v3/apiTradingStatus.html", 'GET', ['wapi' => true], true);
         return $arr;
-    }    
+    }
 }
